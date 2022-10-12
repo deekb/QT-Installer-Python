@@ -1,6 +1,6 @@
 <RCC>
   <qresource prefix="icons">
-    <file>Icons/Liscense.svg</file>
+    <file>Icons/License.svg</file>
     <file>Icons/Installer.svg</file>
     <file>Icons/Install.svg</file>
     <file>Icons/Done.svg</file>

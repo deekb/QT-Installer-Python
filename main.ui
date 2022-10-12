@@ -50,7 +50,7 @@
        <set>Qt::ImhNone</set>
       </property>
       <property name="currentIndex">
-       <number>3</number>
+       <number>1</number>
       </property>
       <property name="usesScrollButtons">
        <bool>false</bool>
@@ -155,7 +155,7 @@ p, li { white-space: pre-wrap; }
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="liscense">
+      <widget class="QWidget" name="license">
        <property name="enabled">
         <bool>true</bool>
        </property>
@@ -166,7 +166,7 @@ p, li { white-space: pre-wrap; }
         </size>
        </property>
        <attribute name="title">
-        <string>Liscense</string>
+        <string>license</string>
        </attribute>
        <layout class="QFormLayout" name="formLayout_3">
         <item row="0" column="0">
@@ -175,7 +175,7 @@ p, li { white-space: pre-wrap; }
            <string/>
           </property>
           <property name="pixmap">
-           <pixmap resource="Resources.qrc">:/icons/Icons/Liscense.svg</pixmap>
+           <pixmap resource="Resources.qrc">:/icons/Icons/License.svg</pixmap>
           </property>
           <property name="scaledContents">
            <bool>false</bool>
@@ -191,7 +191,7 @@ p, li { white-space: pre-wrap; }
            <enum>Qt::LeftToRight</enum>
           </property>
           <property name="text">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:14pt; font-weight:600;&quot;&gt;Liscense Agreement&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:14pt; font-weight:600;&quot;&gt;license Agreement&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignCenter</set>

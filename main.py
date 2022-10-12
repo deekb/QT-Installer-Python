@@ -1,15 +1,16 @@
+import getpass
+import math
+import os
+import sys
+
+import qdarkstyle
+# noinspection PyUnresolvedReferences
 from PyQt5 import uic, QtCore
 from PyQt5.QtWidgets import QApplication, QMessageBox, QLabel, QTextBrowser, QRadioButton
-import os
-import getpass
-import qdarkstyle
-import time
-import math
-import sys
 
 
 # Function for retrieving the relative path for resources
-def getPath(relative_path):
+def get_path(relative_path):
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), relative_path)
 
 
@@ -35,23 +36,30 @@ pages = {0: "welcome",
          2: "install",
          3: "done"}
 
-
 # Global variables:
+Form, Window = uic.loadUiType(get_path("main.ui"))  # Load the UI file
+app = QApplication([])
+window = Window()  # Initialize the window
+form = Form()
+currentPage = 0
+tabChangeAllowed = False
 
 
-def parsePlaceholders(text_object_list: list) -> None:
+def parse_placeholders(text_object_list: list) -> None:
     if isinstance(text_object_list, list):
         for textObject in text_object_list:
             if isinstance(textObject, QTextBrowser):
                 text = textObject.toPlainText()
             elif isinstance(textObject, (QLabel, QRadioButton)):
                 text = textObject.text()
+            else:
+                text = ""
 
             for substitution in substitutions:  # Iterate through the substitutions and apply them
                 text = text.replace("{" + substitution + "}", substitutions[substitution])
 
             if isinstance(textObject, QTextBrowser):
-                text = textObject.setPlainText(text)
+                textObject.setPlainText(text)
             elif isinstance(textObject, (QLabel, QRadioButton)):
                 textObject.setText(text)
     else:
@@ -59,11 +67,9 @@ def parsePlaceholders(text_object_list: list) -> None:
         return
 
 
-def copyFile(src, dst):
+def copy_file(src, dst):
     print('copying "{}" --> "{}"'.format(src, dst))
 
-    # Start the timer and get the size.
-    start = time.time()
     size = os.stat(src).st_size
     print('{} bytes'.format(size))
 
@@ -128,13 +134,13 @@ def next_tab() -> None:  # Tab change by clicking next
 def install():
     print("Installing...")
     print("Copying files")
-    copyFile(getPath("main.bin"), os.path.expanduser("~/.local/bin/main"))
+    copy_file(get_path("main.bin"), os.path.expanduser("~/.local/bin/main"))
     print("Setting permissions")
     os.chmod(os.path.expanduser("~/.local/bin/main"), 0o744)
     print("Done Installing")
 
 
-def tab_change(i) -> None:  # Block manual tab changes
+def tab_change() -> None:  # Block manual tab changes
     global tabChangeAllowed, currentPage
     if not tabChangeAllowed:
         print("Blocked an attempt to change page manually")
@@ -143,18 +149,15 @@ def tab_change(i) -> None:  # Block manual tab changes
         tabChangeAllowed = False
 
 
-def closewindow():
+def close_window():
     window.close()
+    # noinspection PyProtectedMember,PyUnresolvedReferences
     os._exit(0)
 
 
-def initUI():
-    global form, window, app
-    global currentPage, tabChangeAllowed, form
-    Form, Window = uic.loadUiType(getPath("main.ui"))  # Load the UI file
+def initialize_user_interface():
+    global form, window, app, currentPage, tabChangeAllowed
 
-    app = QApplication([])  # Initialize the app
-    window = Window()  # Initialize the window
     form = Form()  # Set the window contents
     window.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())  # Set the style sheet of the window (using QDarkStyle)
     form.setupUi(window)  # Set up the UI
@@ -169,14 +172,14 @@ def initUI():
         form.installForEveryone.setEnabled(False)
         form.installForMeOnly.setChecked(True)
 
-    parsePlaceholders([form.welcomeLabel, form.programDescription, form.installForMeOnly, form.thankYouForInstalling])
+    parse_placeholders([form.welcomeLabel, form.programDescription, form.installForMeOnly, form.thankYouForInstalling])
 
     form.tabs.setCurrentIndex(currentPage)
-    form.cancel.clicked.connect(closewindow)
+    form.cancel.clicked.connect(close_window)
     form.next_button.clicked.connect(next_tab)
     form.tabs.currentChanged.connect(tab_change)
 
 
-initUI()  # Create the UI
+initialize_user_interface()  # Create the UI
 window.show()  # Show the UI
 app.exec()  # Run the app
