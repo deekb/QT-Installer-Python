@@ -68,15 +68,15 @@ def parse_placeholders(text_object_list: list) -> None:
 
 
 def copy_file(src, dst):
-    print('copying "{}" --> "{}"'.format(src, dst))
+    print('copying "{}" to "{}"'.format(src, dst))
 
     size = os.stat(src).st_size
-    print('{} bytes'.format(size))
+    print('file is {} bytes'.format(size))
 
     # Adjust the chunk size to the input size.
     divisor = 100  # .1%
     # chunk_size = size / divisor
-    chunk_size = math.ceil(size / divisor)  # suggested by 0xmessi to fix an error.
+    chunk_size = math.ceil(size / divisor)
     while chunk_size == 0 and divisor > 0:
         divisor /= 10
         chunk_size = size / divisor
