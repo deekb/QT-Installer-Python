@@ -23,11 +23,28 @@
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="Resources.qrc">
+    <normaloff>:/icons/Icons/main.svg</normaloff>:/icons/Icons/main.svg</iconset>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <property name="autoFillBackground">
     <bool>false</bool>
    </property>
    <layout class="QFormLayout" name="formLayout">
+    <item row="1" column="1">
+     <widget class="QPushButton" name="next_button">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
+      <property name="text">
+       <string>Next</string>
+      </property>
+      <property name="default">
+       <bool>false</bool>
+      </property>
+     </widget>
+    </item>
     <item row="2" column="1">
      <widget class="QPushButton" name="cancel">
       <property name="text">
@@ -50,7 +67,7 @@
        <set>Qt::ImhNone</set>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>2</number>
       </property>
       <property name="usesScrollButtons">
        <bool>false</bool>
@@ -154,6 +171,10 @@ p, li { white-space: pre-wrap; }
          </widget>
         </item>
        </layout>
+       <zorder>welcomeLabel</zorder>
+       <zorder>label_6</zorder>
+       <zorder>programDescription</zorder>
+       <zorder>label_2</zorder>
       </widget>
       <widget class="QWidget" name="license">
        <property name="enabled">
@@ -201,7 +222,10 @@ p, li { white-space: pre-wrap; }
         <item row="1" column="0" colspan="2">
          <widget class="QLabel" name="label_5">
           <property name="text">
-           <string>Please read and agree to the following  agreement, you must accept the agreement in order to continue with the installation</string>
+           <string>Please read and accept the following  agreement, you must accept the agreement in order to continue with the installation</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
           </property>
           <property name="wordWrap">
            <bool>true</bool>
@@ -213,7 +237,7 @@ p, li { white-space: pre-wrap; }
           <property name="minimumSize">
            <size>
             <width>0</width>
-            <height>300</height>
+            <height>320</height>
            </size>
           </property>
           <property name="html">
@@ -290,6 +314,13 @@ p, li { white-space: pre-wrap; }
         </item>
         <item row="1" column="0" colspan="2">
          <widget class="QRadioButton" name="installForEveryone">
+          <property name="toolTip">
+           <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Ubuntu'; font-size:10pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Place the binary in the /usr/bin/ directory so that everyone can execute it&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
           <property name="text">
            <string>Install for all users (Requires root)</string>
           </property>
@@ -300,6 +331,9 @@ p, li { white-space: pre-wrap; }
         </item>
         <item row="2" column="0" colspan="2">
          <widget class="QRadioButton" name="installForMeOnly">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Place the binary in the current user's .local/bin/ directory so that the current user can execute it&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
           <property name="text">
            <string>Install for {user} only</string>
           </property>
@@ -319,7 +353,7 @@ p, li { white-space: pre-wrap; }
           <property name="minimumSize">
            <size>
             <width>478</width>
-            <height>0</height>
+            <height>20</height>
            </size>
           </property>
           <property name="acceptDrops">
@@ -394,28 +428,121 @@ p, li { white-space: pre-wrap; }
           </property>
          </widget>
         </item>
+        <item row="2" column="0">
+         <widget class="QRadioButton" name="radioButton">
+          <property name="text">
+           <string>For Me</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QRadioButton" name="radioButton_4">
+          <property name="text">
+           <string>For Everyone</string>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+        <item row="1" column="0" colspan="2">
+         <widget class="QCommandLinkButton" name="addDesktopEntry">
+          <property name="text">
+           <string>Add a desktop entry</string>
+          </property>
+          <property name="icon">
+           <iconset theme="add"/>
+          </property>
+         </widget>
+        </item>
+        <item row="7" column="0">
+         <widget class="QCommandLinkButton" name="addMenuEntry">
+          <property name="text">
+           <string>Add a menu entry</string>
+          </property>
+          <property name="icon">
+           <iconset theme="add"/>
+          </property>
+         </widget>
+        </item>
+        <item row="9" column="0">
+         <widget class="QRadioButton" name="radioButton_3">
+          <property name="text">
+           <string>For Me</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup_2</string>
+          </attribute>
+         </widget>
+        </item>
+        <item row="9" column="1">
+         <widget class="QRadioButton" name="radioButton_2">
+          <property name="text">
+           <string>For Everyone</string>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">buttonGroup_2</string>
+          </attribute>
+         </widget>
+        </item>
+        <item row="14" column="0">
+         <widget class="QCommandLinkButton" name="readDocumentation">
+          <property name="text">
+           <string>Read documentation</string>
+          </property>
+         </widget>
+        </item>
+        <item row="15" column="0">
+         <widget class="QCommandLinkButton" name="launchNow">
+          <property name="text">
+           <string>Launch It</string>
+          </property>
+          <property name="icon">
+           <iconset theme="next"/>
+          </property>
+         </widget>
+        </item>
        </layout>
       </widget>
-     </widget>
-    </item>
-    <item row="1" column="1">
-     <widget class="QPushButton" name="next_button">
-      <property name="enabled">
-       <bool>true</bool>
-      </property>
-      <property name="text">
-       <string>Next</string>
-      </property>
-      <property name="default">
-       <bool>false</bool>
-      </property>
      </widget>
     </item>
    </layout>
   </widget>
  </widget>
+ <tabstops>
+  <tabstop>tabs</tabstop>
+  <tabstop>programDescription</tabstop>
+  <tabstop>next_button</tabstop>
+  <tabstop>cancel</tabstop>
+  <tabstop>textBrowser_2</tabstop>
+  <tabstop>accepted</tabstop>
+  <tabstop>not_accepted</tabstop>
+  <tabstop>installForEveryone</tabstop>
+  <tabstop>installForMeOnly</tabstop>
+  <tabstop>addDesktopEntry</tabstop>
+  <tabstop>radioButton</tabstop>
+  <tabstop>radioButton_4</tabstop>
+  <tabstop>addMenuEntry</tabstop>
+  <tabstop>radioButton_3</tabstop>
+  <tabstop>radioButton_2</tabstop>
+  <tabstop>readDocumentation</tabstop>
+  <tabstop>launchNow</tabstop>
+ </tabstops>
  <resources>
   <include location="Resources.qrc"/>
  </resources>
  <connections/>
+ <buttongroups>
+  <buttongroup name="buttonGroup"/>
+  <buttongroup name="buttonGroup_2"/>
+ </buttongroups>
 </ui>

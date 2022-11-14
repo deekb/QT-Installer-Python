@@ -1,15 +1,32 @@
+#! /bin/python3
 import getpass
 import math
 import os
 import sys
+import time
+import datetime
+import hashlib
 
-import qdarkstyle
-# noinspection PyUnresolvedReferences
+try:
+    import qdarkstyle
+except ModuleNotFoundError as e:
+    print("Recoverable exception: could not find module \"qdarkstyle\"")
+    NOQDARKSTYLE = True
 from PyQt5 import uic, QtCore
 from PyQt5.QtWidgets import QApplication, QMessageBox, QLabel, QTextBrowser, QRadioButton
 
+# Get some colored terminal output
+from colors import Colors
 
-# Function for retrieving the relative path for resources
+fg, bg = Colors.Foreground, Colors.Background
+
+
+def log_out(string, end="\n"):
+    print(string, end=end)
+    LOG_FILE_OBJECT.write(string + end)
+
+
+# Function for retrieving the relative path for resource files
 def get_path(relative_path):
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), relative_path)
 
@@ -23,136 +40,179 @@ substitutions = {"home": os.path.expanduser("~")}
 """
 # Make sure to call parsePlaceholder() on the object before running the app!
 
-# Global constants:
-substitutions = {"name": "Main",
+# <CONSTANTS>
+
+PROGRAM_NAME = "IP-Geo"
+BINARY_NAME = "ip-geo"
+VERSION = "1.42"
+LOG_FILENAME = f"{PROGRAM_NAME}_{datetime.datetime.now()}.log"
+LOG_PATH = f"/tmp/{LOG_FILENAME}"
+INSTALLED = False
+DESKTOP_SHORTCUT_PATH = os.path.expanduser(f"~/Desktop/{PROGRAM_NAME}.desktop")
+MENU_SHORTCUT_PATH = os.path.expanduser(f"~/.local/share/applications/{PROGRAM_NAME}.desktop")
+DESKTOP_SHORTCUT_CONTENTS = f"""\
+#!/usr/bin/env xdg-open
+[Desktop Entry]
+Name={PROGRAM_NAME} {VERSION}
+Comment=Locate IP addresses and find information about them
+Exec=bash -c "ip-geo; sleep 10"
+Type=Application
+Categories=Utility;
+Icon=gnome-globe
+Terminal=true\
+"""
+
+LOG_FILE_OBJECT = open(LOG_PATH, "a")
+
+SUBSTITUTIONS = {"name": PROGRAM_NAME,
                  "user": getpass.getuser().title(),
-                 "version": "1.0.0",
+                 "version": VERSION,
                  "developer": "Derek Michael Baier",
                  "maintainer": "Derek Michael Baier",
                  "email": "Derek.m.baier@gmail.com"}
 
-pages = {0: "welcome",
+PAGES = {0: "welcome",
          1: "license",
          2: "install",
          3: "done"}
 
-# Global variables:
-Form, Window = uic.loadUiType(get_path("main.ui"))  # Load the UI file
-app = QApplication([])
-window = Window()  # Initialize the window
-form = Form()
-currentPage = 0
-tabChangeAllowed = False
+
+def parse_placeholders(*text_objects) -> None:
+    for textObject in list(*text_objects):
+        if isinstance(textObject, QTextBrowser):
+            text = textObject.toPlainText()
+        elif isinstance(textObject, (QLabel, QRadioButton)):
+            text = textObject.text()
+        else:
+            log_out(f"[parse_placeholders]: \"{textobject}\" is not a valid text object or is not yet supported")
+            text = ""
+
+        for substitution in SUBSTITUTIONS:  # Iterate through the substitutions and apply them
+            text = text.replace("{" + substitution + "}", SUBSTITUTIONS[substitution])
+
+        if isinstance(textObject, QTextBrowser):
+            textObject.setPlainText(text)
+        elif isinstance(textObject, (QLabel, QRadioButton)):
+            textObject.setText(text)
 
 
-def parse_placeholders(text_object_list: list) -> None:
-    if isinstance(text_object_list, list):
-        for textObject in text_object_list:
-            if isinstance(textObject, QTextBrowser):
-                text = textObject.toPlainText()
-            elif isinstance(textObject, (QLabel, QRadioButton)):
-                text = textObject.text()
-            else:
-                text = ""
-
-            for substitution in substitutions:  # Iterate through the substitutions and apply them
-                text = text.replace("{" + substitution + "}", substitutions[substitution])
-
-            if isinstance(textObject, QTextBrowser):
-                textObject.setPlainText(text)
-            elif isinstance(textObject, (QLabel, QRadioButton)):
-                textObject.setText(text)
-    else:
-        print("Argument must be a list!")
-        return
-
-
-def copy_file(src, dst):
-    print('copying "{}" to "{}"'.format(src, dst))
+def copy_file(src, dst, chunks=100):
+    log_out(f"[copy_file]: copying \"{src}\" to \"{dst}\"")
 
     size = os.stat(src).st_size
-    print('file is {} bytes'.format(size))
+    log_out(f"[copy_file]: file is {size} bytes")
 
-    # Adjust the chunk size to the input size.
-    divisor = 100  # .1%
-    # chunk_size = size / divisor
-    chunk_size = math.ceil(size / divisor)
-    while chunk_size == 0 and divisor > 0:
-        divisor /= 10
-        chunk_size = size / divisor
-    print('chunk size is {}'.format(chunk_size))
+    chunk_size = math.ceil(size / chunks)
+    while chunk_size == 0 and chunks > 0:
+        chunks /= 10
+        chunk_size = size / chunks
+    log_out(f"[copy_file]: Moving in {chunks} chunks, each chunk is {chunk_size} bytes")
 
     # Copy.
     try:
-        with open(src, 'rb') as ifp:
-            with open(dst, 'wb') as ofp:
-                copied = 0  # bytes
-                chunk = ifp.read(chunk_size)
-                while chunk:
+        with open(src, 'rb') as input_file:
+            with open(dst, 'wb') as output_file:
+                copied_bytes = 0  # bytes
+                chunk = input_file.read(chunk_size)
+                while chunk and window.isVisible():
                     # Write and calculate how much has been written so far.
-                    ofp.write(chunk)
-                    copied += len(chunk)
-                    per = 100 * float(copied) / float(size)
-                    print("\r", end="")
-                    print(round(per, 2), end="")
-
+                    output_file.write(chunk)
+                    copied_bytes += len(chunk)
+                    percent_complete = 100 * float(copied_bytes) / float(size)
+                    log_out(f"[copy_file]: INFO: {round(percent_complete)}% Complete ")
                     # Read in the next chunk.
-                    chunk = ifp.read(chunk_size)
-                    form.installProgress.setValue(round(per))
+                    chunk = input_file.read(chunk_size)
+                    form.installProgress.setValue(round(percent_complete))
                     form.installProgress.update()
                     QtCore.QCoreApplication.processEvents()
+        if not window.isVisible():
+            os.remove(dst)
+            return False
+        else:
+            return True
 
-    except IOError as obj:
-        print('\nERROR: {}'.format(obj))
-        sys.exit(1)
+    except IOError as e:
+        QMessageBox.critical(window, "Failed",
+                             "The installer failed to copy the required files!\n Please retry as root")
+        log_out(fg.red + f"\n[copy_file]: {e}" + Colors.reset)
+        raise Exception
 
 
-def next_tab() -> None:  # Tab change by clicking next
+def next_tab() -> None:  # Manage tab changes using the next button
     global tabChangeAllowed, currentPage, window
-    if pages[currentPage] == "license":
+    if PAGES[currentPage] == "license":
         if not form.accepted.isChecked():
-            print("Please accept the terms and conditions in order to proceed!")
+            log_out(
+                fg.yellow + "[next_tab]: Please accept the terms and conditions in order to proceed!" + Colors.reset)
             QMessageBox.information(window, "License", "Please accept the terms and conditions in order to proceed!"),
             return
-    if pages[currentPage] == "install":
-        print("Install button pressed, installing and disabling next button")
+        print("[next_tab]: Terms and con")
+    if PAGES[currentPage] == "install":
+        log_out("[next_tab]: Install button pressed, installing and disabling next button")
         form.next_button.setEnabled(False)
         install()
         form.next_button.hide()
-        print("installed, changing next button text to \"Exit\"")
+        log_out("[next_tab]: Installed, changing next button text to \"Exit\"")
         form.cancel.setText("Exit")
     if currentPage < form.tabs.count() - 1:
         currentPage += 1
         tabChangeAllowed = True
         form.tabs.setCurrentIndex(currentPage)
         tabChangeAllowed = False
-    if pages[currentPage] == "install":
-        print("1 Tab left, changing next button text to \"Install\"")
+    if PAGES[currentPage] == "install":
+        log_out("[next_tab]: Changing next button text to \"Install\"")
         form.next_button.setText("Install")
 
 
-def install():
-    print("Installing...")
-    print("Copying files")
-    copy_file(get_path("main.bin"), os.path.expanduser("~/.local/bin/main"))
-    print("Setting permissions")
-    os.chmod(os.path.expanduser("~/.local/bin/main"), 0o744)
-    print("Done Installing")
+def install() -> None:  # Copy the binary to the bin folder
+    if form.installForEveryone.isChecked():
+        install_path = f"/usr/bin/{BINARY_NAME}"
+    else:
+        install_path = os.path.expanduser(f"~/.local/bin/{BINARY_NAME}")
+
+    completed = copy_file(get_path("binary"), install_path)
+    if completed:
+        log_out("[install]: Setting permissions")
+        os.chmod(install_path, 0o744)
+    else:
+        print("[install]: Installation canceled")
+        QMessageBox.warning(window, "Installation Canceled", "Installation was canceled by the user!")
+        log_out("Installation canceled: exiting")
+        close_window()
 
 
 def tab_change() -> None:  # Block manual tab changes
     global tabChangeAllowed, currentPage
     if not tabChangeAllowed:
-        print("Blocked an attempt to change page manually")
+        log_out("[tab_change]: Blocked manual tab change")
         tabChangeAllowed = True
         form.tabs.setCurrentIndex(currentPage)
         tabChangeAllowed = False
 
 
 def close_window():
+    log_out("[close_window]: Closing")
+    print(window.isVisible())
     window.close()
-    # noinspection PyProtectedMember,PyUnresolvedReferences
-    os._exit(0)
+    print(window.isVisible())
+
+
+def create_desktop_shortcut():
+    global DESKTOP_SHORTCUT_PATH, DESKTOP_SHORTCUT_CONTENTS
+    with open(DESKTOP_SHORTCUT_PATH, "w") as f:
+        f.write(DESKTOP_SHORTCUT_CONTENTS)
+    os.chmod(DESKTOP_SHORTCUT_PATH, 0o744)
+
+
+def create_menu_shortcut():
+    global MENU_SHORTCUT_PATH, DESKTOP_SHORTCUT_CONTENTS
+    with open(MENU_SHORTCUT_PATH, "w") as f:
+        f.write(DESKTOP_SHORTCUT_CONTENTS)
+    os.chmod(MENU_SHORTCUT_PATH, 0o744)
+
+
+def run_program():
+    os.system(f"x-terminal-emulator -e \"{BINARY_NAME}; sleep 10\"")
 
 
 def initialize_user_interface():
@@ -168,18 +228,54 @@ def initialize_user_interface():
     if os.geteuid() == 0:  # User has root access so allow installing for everyone
         form.installForEveryone.setEnabled(True)
         form.installForEveryone.setChecked(True)
-    else:  # User lacks root access, disable install for everyone
+    else:  # User lacks root access, disable "install for everyone"
         form.installForEveryone.setEnabled(False)
         form.installForMeOnly.setChecked(True)
 
     parse_placeholders([form.welcomeLabel, form.programDescription, form.installForMeOnly, form.thankYouForInstalling])
 
+    # Connect UI form signals
     form.tabs.setCurrentIndex(currentPage)
     form.cancel.clicked.connect(close_window)
     form.next_button.clicked.connect(next_tab)
+    form.launchNow.clicked.connect(run_program)
     form.tabs.currentChanged.connect(tab_change)
+    form.addDesktopEntry.clicked.connect(create_desktop_shortcut)
+    form.addMenuEntry.clicked.connect(create_menu_shortcut)
 
 
-initialize_user_interface()  # Create the UI
-window.show()  # Show the UI
-app.exec()  # Run the app
+def main():
+    global app, Form, form, Window, window, currentPage, tabChangeAllowed
+    app = QApplication([])
+    Form, Window = uic.loadUiType(get_path("main.ui"))  # Load the UI file
+    window = Window()
+    form = Form()
+    if not ("NOQDARKSTYLE" in locals()) and not NOQDARKSTYLE:
+        window.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
+
+    currentPage = 0
+    tabChangeAllowed = False
+    log_out("Initializing user interface... ", end="")
+    initialize_user_interface()  # Create the UI
+    log_out("Done")
+    window.show()  # Show the UI
+    app.exec()  # Run the app
+    LOG_FILE_OBJECT.close()
+    return 0
+
+
+if __name__ == "__main__":
+    if os.path.exists("/home/derek/.local/bin/ip-geo"):
+        byte_string = open("/home/derek/.local/bin/ip-geo", "rb").read()
+
+        m = hashlib.md5()
+        m.update(byte_string)
+        if m.hexdigest() == "b552797d9413b3b0a33072c804c829b7":
+            if QMessageBox.warning(window, "Warning", "Warning, the installer found an an existing version of this "
+                                                      "program, would you like to continue?",
+                                   QMessageBox.Ok | QMessageBox.Cancel) == QMessageBox.Ok:
+                exit(main())
+        else:
+            exit(main())
+    else:
+        exit(main())
